@@ -6,6 +6,7 @@ from torch.distributions import Categorical, Normal
 import numpy as np
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f'using {device}!')
 
 class Policy(nn.Module):
 
@@ -75,10 +76,9 @@ class PolicyGradients:
             probs = self._policy(observation).to(device) #.cpu()
             distr = Categorical(probs)
         
-        action = distr.sample()
-        log_prob = distr.log_prob(action) # log probability of action
+        action = distr.sample().item()
         
-        return action.item(), log_prob # quitar log prob
+        return action
         
 
     def _select_action_continuous(self, observation):
@@ -92,10 +92,9 @@ class PolicyGradients:
             mean, std = mean.to(device), std.to(device)
             distr = Normal(mean, std)
             
-        action = distr.sample().squeeze(0)
-        log_prob = distr.log_prob(action) # log probability of action
+        action = distr.sample().squeeze(0).cpu().numpy()
         
-        return action.numpy(), log_prob # quitar log prob
+        return action
             
 
     def update(self, observation_batch, action_batch, advantage_batch):
@@ -156,7 +155,8 @@ class PolicyGradients:
                 # only for part 2
                 estimated_return = None
             else:
-                estimated_return = [rollout_rew[t] * (self._gamma ** t) for t in range(len(rollout_rew))]
+                #estimated_return = [rollout_rew[t] * (self._gamma ** t) for t in range(len(rollout_rew))] # correct this!
+                estimated_return = [sum(rollout_rew) * (self._gamma ** t) for t in range(len(rollout_rew))]
             
             estimated_returns = np.concatenate([estimated_returns, estimated_return])
 

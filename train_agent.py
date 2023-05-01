@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 
 from policy_gradients import PolicyGradients
 
+from utils.parse_args import parse_args
+
 
 def perform_single_rollout(env, agent, episode_nb, render=False):
 
@@ -32,8 +34,8 @@ def perform_single_rollout(env, agent, episode_nb, render=False):
             env.render()
             time.sleep(1. / 60)
 
-        action, pr = agent.select_action(ob_t) # cambiar a que solo reciba la accion?
-
+        action = agent.select_action(ob_t)
+        
         ob_t1, reward, done, _ = env.step(action)
 
         ob_t = np.squeeze(ob_t1) # <-- may not be needed depending on gym version
@@ -92,7 +94,7 @@ def sample_rollouts(env, agent, training_iter, min_batch_steps):
     return sampled_rollouts
 
 
-def train_pg_agent(env, agent, training_iterations, min_batch_steps):
+def train_pg_agent(env, agent, training_iterations, min_batch_steps, exp_name):
 
     tr_iters_vec, avg_reward_vec, std_reward_vec, avg_steps_vec, std_steps_vec = [], [], [], [], []
     _, (axes) = plt.subplots(1, 2, figsize=(12,4))
@@ -121,7 +123,10 @@ def train_pg_agent(env, agent, training_iterations, min_batch_steps):
 
         agent.update(sampled_obs, sampled_acs, estimated_returns)
     
-    save_metrics(tr_iters_vec,avg_reward_vec, std_reward_vec)
+    plt.savefig(f'figures/experiments/{exp_name}.pdf')
+    plt.close()
+    
+    save_metrics(tr_iters_vec,avg_reward_vec, std_reward_vec, exp_name)
     
 
 def update_performance_metrics(tr_iter, sampled_rollouts, axes, tr_iters_vec, avg_reward_vec, std_reward_vec, avg_steps_vec, std_steps_vec):
@@ -177,8 +182,9 @@ def plot_performance_metrics(axes, tr_iters_vec, avg_reward_vec, std_reward_vec,
     plt.pause(0.05)
 
 
-def save_metrics(tr_iters_vec, avg_reward_vec, std_reward_vec):
-    with open('metrics'+datetime.datetime.now().strftime('%H:%M:%S')+'.csv', 'w') as csv_file:
+def save_metrics(tr_iters_vec, avg_reward_vec, std_reward_vec, exp_name):
+    #with open('metrics'+datetime.datetime.now().strftime('%H:%M:%S')+'.csv', 'w') as csv_file:
+    with open(f'metrics/{exp_name}.csv', 'w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter='\t')
         csv_writer.writerow(['steps', 'avg_reward', 'std_reward'])
         for i in range(len(tr_iters_vec)):
@@ -187,23 +193,32 @@ def save_metrics(tr_iters_vec, avg_reward_vec, std_reward_vec):
 
 if __name__ == '__main__':
 
-    #env = gym.make('Pendulum-v1')
-    env = gym.make('CartPole-v1')
+    args = parse_args()
+
+    env = gym.make(args['env'])
 
     dim_states = env.observation_space.shape[0]
 
     continuous_control = isinstance(env.action_space, gym.spaces.Box)
     dim_actions = env.action_space.shape[0] if continuous_control else env.action_space.n
+    
+    policy_args = {
+        'lr': args['lr'],
+        'gamma': args['gamma'],
+        'reward_to_go': args['reward_to_go'],
+        'use_baseline': args['use_baseline']
+    }
+
+    print(f"reward_to_go: {args['reward_to_go']}")
+    print(f"use_baseline: {args['use_baseline']}")
 
     policy_gradients_agent = PolicyGradients(dim_states=dim_states, 
                                              dim_actions=dim_actions, 
-                                             lr=0.005,
-                                             gamma=0.99,
                                              continuous_control=continuous_control,
-                                             reward_to_go=False,
-                                             use_baseline=False)
+                                             **policy_args)
 
     train_pg_agent(env=env, 
                    agent=policy_gradients_agent, 
-                   training_iterations=1000,
-                   min_batch_steps=5000)
+                   training_iterations=args['training_iterations'],
+                   min_batch_steps=5000,
+                   exp_name = args['exp_name'])
