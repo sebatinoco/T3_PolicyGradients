@@ -4,8 +4,10 @@ import torch.nn.functional as F
 from torch.distributions import Categorical, Normal
 
 import numpy as np
+from collections import deque
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(f'using {device}!')
 
 class Policy(nn.Module):
 
@@ -35,7 +37,7 @@ class Policy(nn.Module):
             std = torch.exp(self._log_std)
             return mean, std
         else:
-            probs = F.softmax(self.fc3(input), dim = 1) # aqui deberia ser logits?
+            probs = F.softmax(self.fc3(input))
             return probs
 
 
@@ -56,7 +58,7 @@ class PolicyGradients:
 
         self._policy = Policy(self._dim_states, self._dim_actions, self._continuous_control).to(device)
         # Adam optimizer
-        self._optimizer = torch.optim.Adam(self._policy.parameters(), lr = 1e-3)
+        self._optimizer = torch.optim.Adam(self._policy.parameters(), lr = lr)
 
         self._select_action = self._select_action_continuous if self._continuous_control else self._select_action_discrete
         self._compute_loss = self._compute_loss_continuous if self._continuous_control else self._compute_loss_discrete
@@ -76,10 +78,9 @@ class PolicyGradients:
             distr = Categorical(probs = probs)
             #distr = Categorical(logits = logits)
         
-        action = distr.sample()
-        log_prob = distr.log_prob(action) # log probability of action
+        action = distr.sample().item()
         
-        return action.item(), log_prob # quitar log prob
+        return action
         
 
     def _select_action_continuous(self, observation):
@@ -93,10 +94,9 @@ class PolicyGradients:
             mean, std = mean.to(device), std.to(device)
             distr = Normal(mean, std)
             
-        action = distr.sample().squeeze(0)
-        log_prob = distr.log_prob(action) # log probability of action
+        action = distr.sample().squeeze(0).cpu().numpy()
         
-        return action.numpy(), log_prob # quitar log prob
+        return action
             
 
     def update(self, observation_batch, action_batch, advantage_batch):
@@ -128,9 +128,16 @@ class PolicyGradients:
         log_probs = log_probs.squeeze().to(device) # squeeze?
         
         advantage_batch = torch.from_numpy(advantage_batch).to(device)
-        loss = torch.multiply(-log_probs, advantage_batch)
+        #loss = torch.multiply(log_probs, advantage_batch)
         
-        return torch.mean(loss)
+        loss = []
+        for log_prob, adv in zip(log_probs, advantage_batch):
+            loss.append(log_prob * adv)
+        
+        loss = torch.stack(loss).mean()
+        
+        #return torch.mean(loss) * -1
+        return loss
 
 
     def _compute_loss_continuous(self, observation_batch, action_batch, advantage_batch):
@@ -140,15 +147,15 @@ class PolicyGradients:
         action_batch = torch.from_numpy(action_batch).to(device)
         
         mean, std = self._policy(observation_batch)
-        distr = Normal(mean, std) # 200 mean, 1 std
+        distr = Normal(mean, std) # n mean, 1 std
 
         log_probs = distr.log_prob(action_batch) # compute log_prob for each pair mean-action
         log_probs = log_probs.squeeze().to(device)
 
         advantage_batch = torch.from_numpy(advantage_batch).to(device)
-        loss = torch.multiply(-log_probs, advantage_batch)
+        loss = torch.multiply(log_probs, advantage_batch)
 
-        return torch.mean(loss)
+        return torch.mean(loss) * -1
 
     
     def estimate_returns(self, rollouts_rew):
@@ -157,17 +164,26 @@ class PolicyGradients:
                 
             if self._use_reward_to_go:
                 # only for part 2
-                estimated_return = None
+                estimated_return = deque() # for efficiency
+                n_steps = len(rollout_rew) # steps of rollout
+                
+                for t in range(n_steps)[::-1]:
+                    disc_return_t = estimated_return[0] if len(estimated_return) > 0 else 0
+                    estimated_return.appendleft(disc_return_t * self._gamma + rollout_rew[t]) # pi_t = pi_{t+1} + r_t
+                    
+                estimated_return = list(estimated_return)
+                
             else:
-                estimated_return = [rollout_rew[t] * (self._gamma ** t) for t in range(len(rollout_rew))]
+                #estimated_return = [rollout_rew[t] * (self._gamma ** t) for t in range(len(rollout_rew))] # correct this!
+                estimated_return = [sum(rollout_rew) * (self._gamma ** t) for t in range(len(rollout_rew))]
             
             estimated_returns = np.concatenate([estimated_returns, estimated_return])
 
         if self._use_baseline:
             # only for part 2
-            average_return_baseline = None
+            average_return_baseline = np.mean(estimated_returns)
             # Use the baseline:
-            #estimated_returns -= average_return_baseline
+            estimated_returns -= average_return_baseline
 
         return np.array(estimated_returns, dtype=np.float32)
 
