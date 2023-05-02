@@ -22,7 +22,7 @@ class Policy(nn.Module):
 
         if continuous_control:
             # trainable parameter
-            self._log_std = torch.tensor([-0.5] * dim_actions)
+            self._log_std = torch.tensor([-0.5] * dim_actions) # inciializar en 0s?
             self._log_std = nn.Parameter(self._log_std)
 
     def forward(self, input):
@@ -35,7 +35,7 @@ class Policy(nn.Module):
             std = torch.exp(self._log_std)
             return mean, std
         else:
-            probs = F.softmax(self.fc3(input), dim = 1)
+            probs = F.softmax(self.fc3(input), dim = 1) # aqui deberia ser logits?
             return probs
 
 
@@ -72,8 +72,9 @@ class PolicyGradients:
         observation = torch.from_numpy(observation).float().unsqueeze(0).to(device)
         
         with torch.no_grad():
-            probs = self._policy(observation).to(device) #.cpu()
-            distr = Categorical(probs)
+            probs = self._policy(observation).to(device) #.cpu() # cambiar por logits?
+            distr = Categorical(probs = probs)
+            #distr = Categorical(logits = logits)
         
         action = distr.sample()
         log_prob = distr.log_prob(action) # log probability of action
@@ -102,6 +103,8 @@ class PolicyGradients:
         # update the policy here
         # you should use self._compute_loss 
         
+        # cambiar esto a compute_loss
+        
         if self._continuous_control:
             loss = self._compute_loss_continuous(observation_batch, action_batch, advantage_batch)
         else:
@@ -122,7 +125,7 @@ class PolicyGradients:
         distr = Categorical(probs)
         
         log_probs = distr.log_prob(action_batch) # compute log_prob for each pair mean-action
-        log_probs = log_probs.squeeze().to(device)
+        log_probs = log_probs.squeeze().to(device) # squeeze?
         
         advantage_batch = torch.from_numpy(advantage_batch).to(device)
         loss = torch.multiply(-log_probs, advantage_batch)
