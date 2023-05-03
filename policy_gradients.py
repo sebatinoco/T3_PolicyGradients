@@ -103,12 +103,7 @@ class PolicyGradients:
         # update the policy here
         # you should use self._compute_loss 
         
-        # cambiar esto a compute_loss
-        
-        if self._continuous_control:
-            loss = self._compute_loss_continuous(observation_batch, action_batch, advantage_batch)
-        else:
-            loss = self._compute_loss_discrete(observation_batch, action_batch, advantage_batch)
+        loss = self._compute_loss(observation_batch, action_batch, advantage_batch)
         
         self._optimizer.zero_grad()
         loss.backward()
@@ -128,17 +123,9 @@ class PolicyGradients:
         log_probs = log_probs.squeeze().to(device) # squeeze?
         
         advantage_batch = torch.from_numpy(advantage_batch).to(device)
-        #loss = torch.multiply(log_probs, advantage_batch)
+        loss = torch.multiply(-log_probs, advantage_batch)
         
-        loss = []
-        for log_prob, adv in zip(log_probs, advantage_batch):
-            loss.append(log_prob * adv)
-        
-        loss = torch.stack(loss).mean()
-        
-        #return torch.mean(loss) * -1
-        return loss
-
+        return torch.mean(loss)
 
     def _compute_loss_continuous(self, observation_batch, action_batch, advantage_batch):
         # use negative logprobs * advantages
@@ -153,9 +140,9 @@ class PolicyGradients:
         log_probs = log_probs.squeeze().to(device)
 
         advantage_batch = torch.from_numpy(advantage_batch).to(device)
-        loss = torch.multiply(log_probs, advantage_batch)
+        loss = torch.multiply(-log_probs, advantage_batch)
 
-        return torch.mean(loss) * -1
+        return torch.mean(loss)
 
     
     def estimate_returns(self, rollouts_rew):
@@ -186,7 +173,6 @@ class PolicyGradients:
             estimated_returns -= average_return_baseline
 
         return np.array(estimated_returns, dtype=np.float32)
-
 
     # It may be useful to discount the rewards using an auxiliary function [optional]
     def _discount_rewards(self, rewards):

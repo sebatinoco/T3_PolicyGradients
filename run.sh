@@ -17,3 +17,6 @@ do
     python train_agent.py --env Pendulum-v1 --training_iterations 1000 --lr 0.005 --gamma 0.99 --batch_size 5000 --use_baseline True --reward_to_go False --exp_name Pendulum_exp_32_${i} # exp_32
     python train_agent.py --env Pendulum-v1 --training_iterations 1000 --lr 0.005 --gamma 0.99 --batch_size 5000 --use_baseline True --reward_to_go True --exp_name Pendulum_exp_42_${i} # exp_42
 done
+
+# plot experiments
+python plot_experiment.py

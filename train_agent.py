@@ -1,6 +1,5 @@
 import gym
 import time
-import datetime
 import csv
 
 import numpy as np
@@ -38,14 +37,14 @@ def perform_single_rollout(env, agent, episode_nb, render=False):
         
         ob_t1, reward, done, _ = env.step(action)
 
+        obs.append(ob_t)
+        acs.append(action)
+        rws.append(reward)
+
         ob_t = np.squeeze(ob_t1) # <-- may not be needed depending on gym version
         episode_reward += reward
         
         nb_steps += 1
-
-        obs.append(ob_t)
-        acs.append(action)
-        rws.append(reward)
 
         if done:
             
@@ -82,7 +81,6 @@ def sample_rollouts(env, agent, training_iter, min_batch_steps):
         """
         sample_rollout = perform_single_rollout(env, agent, episode_nb, render=render)
         total_nb_steps += len(sample_rollout[0])
-
         sampled_rollouts.append(sample_rollout)
         """
         
@@ -202,11 +200,19 @@ if __name__ == '__main__':
     continuous_control = isinstance(env.action_space, gym.spaces.Box)
     dim_actions = env.action_space.shape[0] if continuous_control else env.action_space.n
     
+    # policy arguments
     policy_args = {
         'lr': args['lr'],
         'gamma': args['gamma'],
         'reward_to_go': args['reward_to_go'],
-        'use_baseline': args['use_baseline']
+        'use_baseline': args['use_baseline'],
+    }
+    
+    # training arguments
+    training_args = {
+        'training_iterations': args['training_iterations'],
+        'min_batch_steps': args['batch_size'],
+        'exp_name': args['exp_name'],
     }
 
     print(f"reward_to_go: {args['reward_to_go']}")
@@ -215,10 +221,10 @@ if __name__ == '__main__':
     policy_gradients_agent = PolicyGradients(dim_states=dim_states, 
                                              dim_actions=dim_actions, 
                                              continuous_control=continuous_control,
-                                             **policy_args)
+                                             **policy_args,
+                                             )
 
     train_pg_agent(env=env, 
                    agent=policy_gradients_agent, 
-                   training_iterations=args['training_iterations'],
-                   min_batch_steps=5000,
-                   exp_name = args['exp_name'])
+                   **training_args,
+                   )
