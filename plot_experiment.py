@@ -2,7 +2,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 
-def plot_performance_metrics(tr_steps_vec, avg_reward_vec, std_reward_vec, exp_id):
+def plot_performance_metrics(tr_steps_vec, avg_reward_vec, std_reward_vec, exp_id, n_points = 100):
+    
+    plot_steps = len(tr_steps_vec) // n_points if len(tr_steps_vec) > 1 else 1
+    
+    tr_steps_vec = tr_steps_vec[::plot_steps]
+    avg_reward_vec = avg_reward_vec[::plot_steps]
+    std_reward_vec = std_reward_vec[::plot_steps]
+    
     plt.errorbar(tr_steps_vec, avg_reward_vec, yerr = std_reward_vec, marker = '.', color = 'C0')
     plt.xlabel('Training Iteration')
     plt.ylabel('Avg Reward')
@@ -39,4 +46,5 @@ if __name__ == '__main__':
 
     # plot for each experiment
     for exp_id in ids:
+        print(exp_id)
         plot_experiment(exp_id)
