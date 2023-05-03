@@ -46,5 +46,4 @@ if __name__ == '__main__':
 
     # plot for each experiment
     for exp_id in ids:
-        print(exp_id)
         plot_experiment(exp_id)
