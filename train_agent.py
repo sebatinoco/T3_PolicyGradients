@@ -117,7 +117,7 @@ def train_pg_agent(env, agent, training_iterations, min_batch_steps, exp_name):
         estimated_returns = agent.estimate_returns(sampled_rew)
 
         # performance metrics
-        update_performance_metrics(tr_iter, sampled_rollouts, axes, tr_iters_vec, avg_reward_vec, std_reward_vec, avg_steps_vec, std_steps_vec)
+        update_performance_metrics(tr_iter, sampled_rollouts, axes, tr_iters_vec, avg_reward_vec, std_reward_vec, avg_steps_vec, std_steps_vec, exp_name)
 
         agent.update(sampled_obs, sampled_acs, estimated_returns)
     
@@ -127,7 +127,7 @@ def train_pg_agent(env, agent, training_iterations, min_batch_steps, exp_name):
     save_metrics(tr_iters_vec,avg_reward_vec, std_reward_vec, exp_name)
     
 
-def update_performance_metrics(tr_iter, sampled_rollouts, axes, tr_iters_vec, avg_reward_vec, std_reward_vec, avg_steps_vec, std_steps_vec):
+def update_performance_metrics(tr_iter, sampled_rollouts, axes, tr_iters_vec, avg_reward_vec, std_reward_vec, avg_steps_vec, std_steps_vec, exp_name):
 
     raw_returns     = np.array([np.sum(rollout[2]) for rollout in sampled_rollouts])
     rollout_steps   = np.array([len(rollout[2]) for rollout in sampled_rollouts])
@@ -141,6 +141,7 @@ def update_performance_metrics(tr_iter, sampled_rollouts, axes, tr_iters_vec, av
 
     # logs 
     print('-' * 32)
+    print('%20s : %5s'   % ('Experiment'     ,(exp_name)          ))
     print('%20s : %5d'   % ('Training iter'     ,(tr_iter + 1)          ))
     print('-' * 32)
     print('%20s : %5.3g' % ('Max episode return', max_episode_return    ))
@@ -181,7 +182,6 @@ def plot_performance_metrics(axes, tr_iters_vec, avg_reward_vec, std_reward_vec,
 
 
 def save_metrics(tr_iters_vec, avg_reward_vec, std_reward_vec, exp_name):
-    #with open('metrics'+datetime.datetime.now().strftime('%H:%M:%S')+'.csv', 'w') as csv_file:
     with open(f'metrics/{exp_name}.csv', 'w') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter='\t')
         csv_writer.writerow(['steps', 'avg_reward', 'std_reward'])

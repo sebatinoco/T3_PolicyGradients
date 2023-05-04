@@ -24,7 +24,8 @@ class Policy(nn.Module):
 
         if continuous_control:
             # trainable parameter
-            self._log_std = torch.tensor([-0.5] * dim_actions) # inciializar en 0s?
+            #self._log_std = torch.tensor([-0.5] * dim_actions)
+            self._log_std = torch.zeros(dim_actions)
             self._log_std = nn.Parameter(self._log_std)
 
     def forward(self, input):
@@ -32,13 +33,15 @@ class Policy(nn.Module):
         input = F.relu(self.fc1(input))
         input = F.relu(self.fc2(input))
         
-        if self._continuous_control:
-            mean = self.fc3(input)
-            std = torch.exp(self._log_std)
-            return mean, std
-        else:
-            probs = F.softmax(self.fc3(input))
-            return probs
+        #if self._continuous_control:
+        #    mean = self.fc3(input)
+        #    std = torch.exp(self._log_std)
+        #    return mean, std
+        #else:
+        #    probs = F.softmax(self.fc3(input))
+        #    return probs
+            
+        return self.fc3(input) # logits or means
 
 
 class PolicyGradients:
@@ -74,9 +77,10 @@ class PolicyGradients:
         observation = torch.from_numpy(observation).float().unsqueeze(0).to(device)
         
         with torch.no_grad():
-            probs = self._policy(observation).to(device) #.cpu() # cambiar por logits?
-            distr = Categorical(probs = probs)
-            #distr = Categorical(logits = logits)
+            #probs = self._policy(observation).to(device) #.cpu() # cambiar por logits?
+            #distr = Categorical(probs = probs)
+            logits = self._policy(observation).to(device)
+            distr = Categorical(logits = logits)
         
         action = distr.sample().item()
         
@@ -90,9 +94,10 @@ class PolicyGradients:
         observation = torch.from_numpy(observation).float().unsqueeze(0).to(device)
         
         with torch.no_grad():
-            mean, std = self._policy(observation)#.to(device) #.cpu()
-            mean, std = mean.to(device), std.to(device)
-            distr = Normal(mean, std)
+            mean = self._policy(observation).to(device)
+            std = torch.exp(self._policy._log_std).to(device)
+            
+        distr = Normal(mean, std)
             
         action = distr.sample().squeeze(0).cpu().numpy()
         
@@ -116,13 +121,15 @@ class PolicyGradients:
         observation_batch = torch.from_numpy(observation_batch).to(device)
         action_batch = torch.from_numpy(action_batch).to(device)
         
-        probs = self._policy(observation_batch).to(device) #.cpu()
-        distr = Categorical(probs)
+        logits = self._policy(observation_batch).to(device)
+        distr = Categorical(logits = logits)
         
         log_probs = distr.log_prob(action_batch) # compute log_prob for each pair mean-action
-        log_probs = log_probs.squeeze().to(device) # squeeze?
+        log_probs = log_probs.squeeze().to(device) 
         
         advantage_batch = torch.from_numpy(advantage_batch).to(device)
+        assert log_probs.shape == advantage_batch.shape
+        
         loss = torch.multiply(-log_probs, advantage_batch)
         
         return torch.mean(loss)
@@ -133,13 +140,19 @@ class PolicyGradients:
         observation_batch = torch.from_numpy(observation_batch).to(device)
         action_batch = torch.from_numpy(action_batch).to(device)
         
-        mean, std = self._policy(observation_batch)
+        #mean, std = self._policy(observation_batch)
+        
+        mean = self._policy(observation_batch).to(device)
+        std = torch.exp(self._policy._log_std).to(device)
+        
         distr = Normal(mean, std) # n mean, 1 std
 
         log_probs = distr.log_prob(action_batch) # compute log_prob for each pair mean-action
         log_probs = log_probs.squeeze().to(device)
 
         advantage_batch = torch.from_numpy(advantage_batch).to(device)
+        assert log_probs.shape == advantage_batch.shape
+        
         loss = torch.multiply(-log_probs, advantage_batch)
 
         return torch.mean(loss)
@@ -161,8 +174,8 @@ class PolicyGradients:
                 estimated_return = list(estimated_return)
                 
             else:
-                #estimated_return = [rollout_rew[t] * (self._gamma ** t) for t in range(len(rollout_rew))] # correct this!
-                estimated_return = [sum(rollout_rew) * (self._gamma ** t) for t in range(len(rollout_rew))]
+                #estimated_return = [sum(rollout_rew) * (self._gamma ** t) for t in range(len(rollout_rew))]
+                estimated_return = [self._discount_rewards(rollout_rew)] * len(rollout_rew)
             
             estimated_returns = np.concatenate([estimated_returns, estimated_return])
 
@@ -175,5 +188,6 @@ class PolicyGradients:
         return np.array(estimated_returns, dtype=np.float32)
 
     # It may be useful to discount the rewards using an auxiliary function [optional]
-    def _discount_rewards(self, rewards):
-        pass
+    def _discount_rewards(self, rewards: list):
+        
+        return sum([rewards[t] * (self._gamma ** t) for t in range(len(rewards))])
