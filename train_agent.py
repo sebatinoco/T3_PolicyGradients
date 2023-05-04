@@ -19,6 +19,10 @@ def perform_single_rollout(env, agent, episode_nb, render=False):
     # np.array(acs) -> shape: (time_steps, nb_acs) if actions are continuous, (time_steps,) if actions are discrete
     # np.array(rws) -> shape: (time_steps,)
 
+    dim_states = env.observation_space.shape[0]
+    continuous_control = isinstance(env.action_space, gym.spaces.Box)
+    dim_actions = env.action_space.shape[0] if continuous_control else env.action_space.n
+    
     ob_t = env.reset()
     
     done = False
@@ -52,6 +56,7 @@ def perform_single_rollout(env, agent, episode_nb, render=False):
             acs = np.array(acs)
             rws = np.array(rws)
             
+            # Testing
             assert obs.shape == (nb_steps, dim_states), 'shape of np.array(obs) is not (time_steps, nb_obs)'
             if continuous_control:
                 assert acs.shape == (nb_steps, dim_actions), 'shape of np.array(acs) is not (time_steps, nb_acs)'
@@ -78,16 +83,13 @@ def sample_rollouts(env, agent, training_iter, min_batch_steps):
         # Uncomment once perform_single_rollout works.
         # Return sampled_rollouts
         
-        """
-        sample_rollout = perform_single_rollout(env, agent, episode_nb, render=render)
-        total_nb_steps += len(sample_rollout[0])
-        sampled_rollouts.append(sample_rollout)
-        """
-        
         sample_rollout = perform_single_rollout(env, agent, episode_nb, render=render)
         total_nb_steps += len(sample_rollout[0])
 
         sampled_rollouts.append(sample_rollout)
+    
+    # Testing    
+    assert sum([len(rollout[0]) for rollout in sampled_rollouts]) >= min_batch_steps, 'number of total steps is not equal or greater than min_batch_steps'
         
     return sampled_rollouts
 

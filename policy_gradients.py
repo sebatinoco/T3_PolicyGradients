@@ -24,7 +24,6 @@ class Policy(nn.Module):
 
         if continuous_control:
             # trainable parameter
-            #self._log_std = torch.tensor([-0.5] * dim_actions)
             self._log_std = torch.zeros(dim_actions)
             self._log_std = nn.Parameter(self._log_std)
 
@@ -32,14 +31,6 @@ class Policy(nn.Module):
         
         input = F.relu(self.fc1(input))
         input = F.relu(self.fc2(input))
-        
-        #if self._continuous_control:
-        #    mean = self.fc3(input)
-        #    std = torch.exp(self._log_std)
-        #    return mean, std
-        #else:
-        #    probs = F.softmax(self.fc3(input))
-        #    return probs
             
         return self.fc3(input) # logits or means
 
@@ -77,8 +68,6 @@ class PolicyGradients:
         observation = torch.from_numpy(observation).float().unsqueeze(0).to(device)
         
         with torch.no_grad():
-            #probs = self._policy(observation).to(device) #.cpu() # cambiar por logits?
-            #distr = Categorical(probs = probs)
             logits = self._policy(observation).to(device)
             distr = Categorical(logits = logits)
         
@@ -96,8 +85,7 @@ class PolicyGradients:
         with torch.no_grad():
             mean = self._policy(observation).to(device)
             std = torch.exp(self._policy._log_std).to(device)
-            
-        distr = Normal(mean, std)
+            distr = Normal(mean, std)
             
         action = distr.sample().squeeze(0).cpu().numpy()
         
@@ -139,8 +127,6 @@ class PolicyGradients:
         
         observation_batch = torch.from_numpy(observation_batch).to(device)
         action_batch = torch.from_numpy(action_batch).to(device)
-        
-        #mean, std = self._policy(observation_batch)
         
         mean = self._policy(observation_batch).to(device)
         std = torch.exp(self._policy._log_std).to(device)
