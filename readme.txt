@@ -6,6 +6,7 @@ El proyecto se estructura de las siguientes carpetas:
 - /figures: carpeta para guardar las figuras exportadas en formato .pdf
     - /agg_expetiments: contiene las figuras de los experimentos agregados según lo requerido en la pregunta 4
     - /experiments: contiene las figuras de experimentos individuales
+    - /test_experiments: contiene las figuras de los experimentos para testear el funcionamiento de los métodos programados
 - /metrics: carpeta con los archivos .csv para generar los gráficos del reporte
 - /utils: carpeta para guardar algunas funciones auxiliares a usar en el proyecto
 
