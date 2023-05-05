@@ -12,11 +12,11 @@ El proyecto se estructura de las siguientes carpetas:
 
 El archivo requirements.txt contiene todas las dependencias necesarias para ejecutar este proyecto. Se resaltan las siguientes librerías:
 
-pandas==2.0.0
-numpy==1.24.2
-matplotlib==3.7.1
-gym==0.23.1
-torch==2.0.0
+- pandas==2.0.0
+- numpy==1.24.2
+- matplotlib==3.7.1
+- gym==0.23.1
+- torch==2.0.0
 
 Además, los experimentos fueron ejecutados sobre python==3.9.
 
