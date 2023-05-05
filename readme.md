@@ -26,7 +26,7 @@ Ejecutar este proyecto es sencillo, sólo es necesario seguir los siguientes pas
 2. Replicar los experimentos: `bash run.sh`
 
 Para Windows, se los resultados pueden ser replicados mediante el comando:
-python train_agent.py --env <env> --training_iterations <training_iterations> --lr <lr> --gamma <gamma> --batch_size <btach_size> --use_baseline <use_baseline> --reward_to_go <reward_to_go> --exp_name <exp_name>
+`python train_agent.py --env <env> --training_iterations <training_iterations> --lr <lr> --gamma <gamma> --batch_size <btach_size> --use_baseline <use_baseline> --reward_to_go <reward_to_go> --exp_name <exp_name>`
 
 - <env> representa el environment del experimento
 - <training_iterations> representa el número de iteraciones de entrenamiento
