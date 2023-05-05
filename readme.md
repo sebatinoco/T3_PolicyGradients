@@ -28,11 +28,11 @@ Ejecutar este proyecto es sencillo, sólo es necesario seguir los siguientes pas
 Para Windows, se los resultados pueden ser replicados mediante el comando:
 `python train_agent.py --env <env> --training_iterations <training_iterations> --lr <lr> --gamma <gamma> --batch_size <btach_size> --use_baseline <use_baseline> --reward_to_go <reward_to_go> --exp_name <exp_name>`
 
-- <env> representa el environment del experimento
-- <training_iterations> representa el número de iteraciones de entrenamiento
-- <lr> representa la tasa de aprendizaje del algoritmo
-- <gamma> representa el factor de descuento del algoritmo
-- <batch_size> representa el tamaño del batch para el entrenamiento
-- <use_baseline> es un booleano que indica si habilitar o no el uso de baseline
-- <reward_to_go> es un booleano que indica si habiltiar o no el uso de reward to go
-- <exp_name> representa el nombre del experimento para exportar los resultados
+- `env` representa el environment del experimento
+- `training_iterations` representa el número de iteraciones de entrenamiento
+- `lr` representa la tasa de aprendizaje del algoritmo
+- `gamma` representa el factor de descuento del algoritmo
+- `batch_size` representa el tamaño del batch para el entrenamiento
+- `use_baseline` es un booleano que indica si habilitar o no el uso de baseline
+- `reward_to_go` es un booleano que indica si habiltiar o no el uso de reward to go
+- `exp_name` representa el nombre del experimento para exportar los resultados
