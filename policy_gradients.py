@@ -176,4 +176,5 @@ class PolicyGradients:
     # It may be useful to discount the rewards using an auxiliary function [optional]
     def _discount_rewards(self, rewards: list):
         
+        # discount future rewards using gamma
         return sum([rewards[t] * (self._gamma ** t) for t in range(len(rewards))])
