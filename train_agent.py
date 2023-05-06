@@ -90,6 +90,7 @@ def sample_rollouts(env, agent, training_iter, min_batch_steps):
     
     # Testing    
     assert sum([len(rollout[0]) for rollout in sampled_rollouts]) >= min_batch_steps, 'number of total steps is not equal or greater than min_batch_steps'
+    assert all([len(rollout) == 3 for rollout in sampled_rollouts]), 'dimension of sampled rollouts are not equal to 3: (obs, acs, rws)'
         
     return sampled_rollouts
 
