@@ -1,3 +1,6 @@
+# test methods
+python test_methods.py
+
 for i in {1..3}
 do
     # CartPole
