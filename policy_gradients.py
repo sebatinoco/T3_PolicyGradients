@@ -65,7 +65,8 @@ class PolicyGradients:
     def _select_action_discrete(self, observation):
         # sample from categorical distribution
         
-        observation = torch.from_numpy(observation).float().unsqueeze(0).to(device)
+        #observation = torch.from_numpy(observation).float().unsqueeze(0).to(device)
+        observation = torch.from_numpy(observation)
         
         with torch.no_grad():
             logits = self._policy(observation).to(device)
@@ -80,14 +81,16 @@ class PolicyGradients:
         # sample from normal distribution
         # use the log std trainable parameter
         
-        observation = torch.from_numpy(observation).float().unsqueeze(0).to(device)
+        #observation = torch.from_numpy(observation).float().unsqueeze(0).to(device)
+        observation = torch.from_numpy(observation).to(device)
         
         with torch.no_grad():
             mean = self._policy(observation).to(device)
             std = torch.exp(self._policy._log_std).to(device)
             distr = Normal(mean, std)
             
-        action = distr.sample().squeeze(0).cpu().numpy()
+        #action = distr.sample().squeeze(0).cpu().numpy()
+        action = distr.sample().numpy()
         
         return action
             
